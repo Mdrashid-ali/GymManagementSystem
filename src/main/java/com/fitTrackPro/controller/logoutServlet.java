@@ -1,30 +1,18 @@
 package com.fitTrackPro.controller;
 
-
-import jakarta.servlet.ServletException;
+import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
+import java.io.*;
 
-import java.io.IOException;
-
-/**
- * LogoutServlet - Handles user logout
- */
 @WebServlet("/logout")
-public class logoutServlet extends HttpServlet {
-    
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-        
-        response.sendRedirect("login.jsp");
+public class LogoutServlet extends HttpServlet {
+
+    protected void doGet(HttpServletRequest r, HttpServletResponse p) throws ServletException, IOException {
+        HttpSession s = r.getSession(false);
+
+        if (s != null) s.invalidate();
+
+        p.sendRedirect(r.getContextPath() + "/login");
     }
 }

@@ -1,294 +1,250 @@
 package com.fitTrackPro.service;
 
-
 import com.fitTrackPro.config.DBConnection;
-import com.fitTrackPro.model.attendance;
 import com.fitTrackPro.model.member;
-import com.fitTrackPro.model.user;
-import com.fitTrackPro.util.validationUtil;
-
-import java.sql.*;
+import com.fitTrackPro.util.dateUtil;
+import com.fitTrackPro.util.passwordUtil;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Member Service Class
- * Handles member-related business logic
- */
 public class memberService {
-    
-    private userService userService = new userService();
-    
-    public memberService() {
-        this.userService = new userService();
-    }
-    
-    /**
-     * Registers a new member with user account
-     */
-    public member registerMember(member member, String password) throws SQLException {
-        Connection conn = null;
-        try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false);
-            
-            // Create user account first
-            user user = userService.registerUser(member.getEmail(), password, "MEMBER");
-            if (user == null) {
-                throw new SQLException("Failed to create user account");
-            }
-            
-            // Create member record
-            String sql = "INSERT INTO members (user_id, first_name, last_name, phone, " +
-                        "date_of_birth, gender, address, emergency_contact_name, " +
-                        "emergency_contact_phone, membership_type, join_date, " +
-                        "membership_expiry_date, height_cm, weight_kg, fitness_goal, medical_notes) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                pstmt.setInt(1, user.getUserId());
-                pstmt.setString(2, member.getFirstName());
-                pstmt.setString(3, member.getLastName());
-                pstmt.setString(4, validationUtil.cleanPhoneNumber(member.getPhone()));
-                pstmt.setDate(5, member.getDateOfBirth());
-                pstmt.setString(6, member.getGender());
-                pstmt.setString(7, member.getAddress());
-                pstmt.setString(8, member.getEmergencyContactName());
-                pstmt.setString(9, validationUtil.cleanPhoneNumber(member.getEmergencyContactPhone()));
-                pstmt.setString(10, member.getMembershipType());
-                pstmt.setDate(11, member.getJoinDate());
-                pstmt.setDate(12, member.getMembershipExpiryDate());
-                pstmt.setDouble(13, member.getHeightCm() != null ? member.getHeightCm() : 0);
-                pstmt.setDouble(14, member.getWeightKg() != null ? member.getWeightKg() : 0);
-                pstmt.setString(15, member.getFitnessGoal());
-                pstmt.setString(16, member.getMedicalNotes());
-                
-                int affectedRows = pstmt.executeUpdate();
-                
-                if (affectedRows > 0) {
-                    try (ResultSet rs = pstmt.getGeneratedKeys()) {
+    public int registerMemberAccount(String email, String password, member member) throws SQLException {
+        String findUser = "SELECT u.id AS user_id, m.member_id FROM users u LEFT JOIN members m ON m.user_id = u.id WHERE u.email = ? OR u.username = ?";
+        String insertUser = "INSERT INTO users (username, password, name, email, role, status) VALUES (?, ?, ?, ?, 'MEMBER', 'ACTIVE')";
+
+        try (Connection connection = DBConnection.getConnection()) {
+            boolean oldAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                Integer userId = null;
+                try (PreparedStatement ps = connection.prepareStatement(findUser)) {
+                    ps.setString(1, email);
+                    ps.setString(2, email);
+                    try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
-                            conn.commit();
-                            return getMemberById(rs.getInt(1));
+                            if (rs.getInt("member_id") > 0) {
+                                throw new SQLException("An account already exists for that email.", "23000");
+                            }
+                            userId = rs.getInt("user_id");
                         }
                     }
                 }
-            }
-            
-            conn.rollback();
-            return null;
-            
-        } catch (SQLException e) {
-            if (conn != null) {
-                conn.rollback();
-            }
-            throw e;
-        } finally {
-            if (conn != null) {
-                conn.setAutoCommit(true);
-            }
-        }
-    }
-    
-    /**
-     * Gets member by ID
-     */
-    public member getMemberById(int memberId) throws SQLException {
-        String sql = "SELECT m.*, u.email, u.status as user_status " +
-                    "FROM members m " +
-                    "JOIN users u ON m.user_id = u.user_id " +
-                    "WHERE m.member_id = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, memberId);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToMember(rs);
-                }
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Gets member by user ID
-     */
-    public member getMemberByUserId(int userId) throws SQLException {
-        String sql = "SELECT m.*, u.email, u.status as user_status " +
-                    "FROM members m " +
-                    "JOIN users u ON m.user_id = u.user_id " +
-                    "WHERE m.user_id = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, userId);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToMember(rs);
-                }
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Gets all members
-     */
-    public List<member> getAllMembers() throws SQLException {
-        List<member> members = new ArrayList<>();
-        String sql = "SELECT m.*, u.email, u.status as user_status " +
-                    "FROM members m " +
-                    "JOIN users u ON m.user_id = u.user_id " +
-                    "ORDER BY m.created_at DESC";
-        
-        try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            while (rs.next()) {
-                members.add(mapResultSetToMember(rs));
-            }
-        }
-        
-        return members;
-    }
-    
-    /**
-     * Updates a member
-     */
-    public boolean updateMember(member member) throws SQLException {
-        String sql = "UPDATE members SET first_name = ?, last_name = ?, phone = ?, " +
-                    "date_of_birth = ?, gender = ?, address = ?, " +
-                    "emergency_contact_name = ?, emergency_contact_phone = ?, " +
-                    "membership_type = ?, membership_expiry_date = ?, " +
-                    "height_cm = ?, weight_kg = ?, fitness_goal = ?, medical_notes = ? " +
-                    "WHERE member_id = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, member.getFirstName());
-            pstmt.setString(2, member.getLastName());
-            pstmt.setString(3, validationUtil.cleanPhoneNumber(member.getPhone()));
-            pstmt.setDate(4, member.getDateOfBirth());
-            pstmt.setString(5, member.getGender());
-            pstmt.setString(6, member.getAddress());
-            pstmt.setString(7, member.getEmergencyContactName());
-            pstmt.setString(8, validationUtil.cleanPhoneNumber(member.getEmergencyContactPhone()));
-            pstmt.setString(9, member.getMembershipType());
-            pstmt.setDate(10, member.getMembershipExpiryDate());
-            pstmt.setObject(11, member.getHeightCm());
-            pstmt.setObject(12, member.getWeightKg());
-            pstmt.setString(13, member.getFitnessGoal());
-            pstmt.setString(14, member.getMedicalNotes());
-            pstmt.setInt(15, member.getMemberId());
-            
-            return pstmt.executeUpdate() > 0;
-        }
-    }
-    
-    /**
-     * Checks in a member
-     */
-    public int checkInMember(int memberId, String checkInMethod) throws SQLException {
-        member member = getMemberById(memberId);
-        if (member == null || !member.isMembershipActive()) {
-            throw new IllegalStateException("Member not found or membership inactive");
-        }
-        
-        String sql = "INSERT INTO attendance (member_id, check_in_method) VALUES (?, ?)";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            
-            pstmt.setInt(1, memberId);
-            pstmt.setString(2, checkInMethod);
-            
-            int affectedRows = pstmt.executeUpdate();
-            
-            if (affectedRows > 0) {
-                try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        return rs.getInt(1);
+
+                if (userId == null) {
+                    try (PreparedStatement ps = connection.prepareStatement(insertUser, Statement.RETURN_GENERATED_KEYS)) {
+                        ps.setString(1, email);
+                        ps.setString(2, passwordUtil.hashPassword(password));
+                        ps.setString(3, member.getFullName().trim());
+                        ps.setString(4, email);
+                        ps.executeUpdate();
+                        try (ResultSet keys = ps.getGeneratedKeys()) {
+                            if (keys.next()) userId = keys.getInt(1);
+                        }
                     }
                 }
+
+                if (userId == null) throw new SQLException("Creating user failed.");
+                member.setUserId(userId);
+                int memberId = createMember(connection, member);
+                connection.commit();
+                return memberId;
+            } catch (SQLException | RuntimeException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(oldAutoCommit);
             }
         }
-        
-        return -1;
     }
-    
-    /**
-     * Checks out a member
-     */
-    public boolean checkOutMember(int attendanceId) throws SQLException {
-        String sql = "UPDATE attendance SET check_out_time = NOW() WHERE attendance_id = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, attendanceId);
-            return pstmt.executeUpdate() > 0;
+
+    public int createMember(member member) throws SQLException {
+        try (Connection connection = DBConnection.getConnection()) {
+            return createMember(connection, member);
         }
     }
-    
-    /**
-     * Gets member attendance history
-     */
-    public List<attendance> getMemberAttendance(int memberId) throws SQLException {
-        List<attendance> attendanceList = new ArrayList<>();
-        String sql = "SELECT a.*, CONCAT(m.first_name, ' ', m.last_name) as member_name " +
-                    "FROM attendance a " +
-                    "JOIN members m ON a.member_id = m.member_id " +
-                    "WHERE a.member_id = ? " +
-                    "ORDER BY a.check_in_time DESC";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, memberId);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    attendance attendance = new attendance();
-                    attendance.setAttendanceId(rs.getInt("attendance_id"));
-                    attendance.setMemberId(rs.getInt("member_id"));
-                    attendance.setCheckInTime(rs.getTimestamp("check_in_time"));
-                    attendance.setCheckOutTime(rs.getTimestamp("check_out_time"));
-                    attendance.setCheckInMethod(rs.getString("check_in_method"));
-                    attendance.setCreatedAt(rs.getTimestamp("created_at"));
-                    attendance.setMemberName(rs.getString("member_name"));
-                    attendanceList.add(attendance);
-                }
+
+    private int createMember(Connection connection, member member) throws SQLException {
+        String sql = "INSERT INTO members (user_id, first_name, last_name, phone, date_of_birth, gender, address, emergency_contact_name, emergency_contact_phone, membership_type, join_date, membership_expiry_date, height_cm, weight_kg, fitness_goal, medical_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            bindMember(ps, member);
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) return keys.getInt(1);
             }
         }
-        
-        return attendanceList;
+        throw new SQLException("Creating member failed.");
     }
-    
-    /**
-     * Deletes a member
-     */
+
+    public boolean updateMember(member member, boolean admin) throws SQLException {
+        String sql = admin
+                ? "UPDATE members SET first_name=?, last_name=?, phone=?, date_of_birth=?, gender=?, address=?, emergency_contact_name=?, emergency_contact_phone=?, membership_type=?, membership_expiry_date=?, height_cm=?, weight_kg=?, fitness_goal=?, medical_notes=? WHERE member_id=?"
+                : "UPDATE members SET phone=?, address=?, emergency_contact_name=?, emergency_contact_phone=?, height_cm=?, weight_kg=?, fitness_goal=? WHERE member_id=? AND user_id=?";
+
+        try (Connection connection = DBConnection.getConnection(); PreparedStatement ps = connection.prepareStatement(sql)) {
+            if (admin) {
+                ps.setString(1, member.getFirstName());
+                ps.setString(2, member.getLastName());
+                ps.setString(3, member.getPhone());
+                ps.setDate(4, member.getDateOfBirth());
+                ps.setString(5, member.getGender());
+                ps.setString(6, member.getAddress());
+                ps.setString(7, member.getEmergencyContactName());
+                ps.setString(8, member.getEmergencyContactPhone());
+                ps.setString(9, member.getMembershipType());
+                ps.setDate(10, member.getMembershipExpiryDate());
+                ps.setObject(11, member.getHeightCm());
+                ps.setObject(12, member.getWeightKg());
+                ps.setString(13, member.getFitnessGoal());
+                ps.setString(14, member.getMedicalNotes());
+                ps.setInt(15, member.getMemberId());
+            } else {
+                ps.setString(1, member.getPhone());
+                ps.setString(2, member.getAddress());
+                ps.setString(3, member.getEmergencyContactName());
+                ps.setString(4, member.getEmergencyContactPhone());
+                ps.setObject(5, member.getHeightCm());
+                ps.setObject(6, member.getWeightKg());
+                ps.setString(7, member.getFitnessGoal());
+                ps.setInt(8, member.getMemberId());
+                ps.setInt(9, member.getUserId());
+            }
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     public boolean deleteMember(int memberId) throws SQLException {
-        member member = getMemberById(memberId);
-        if (member == null) {
-            return false;
+        String findUser = "SELECT user_id FROM members WHERE member_id = ?";
+        try (Connection connection = DBConnection.getConnection()) {
+            boolean oldAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                Integer userId = null;
+                try (PreparedStatement ps = connection.prepareStatement(findUser)) {
+                    ps.setInt(1, memberId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) userId = rs.getInt("user_id");
+                    }
+                }
+
+                if (userId == null) {
+                    connection.rollback();
+                    return false;
+                }
+
+                executeDelete(connection, "DELETE FROM attendance WHERE member_id = ?", memberId);
+                executeDelete(connection, "DELETE FROM workout_plans WHERE member_id = ?", memberId);
+                int deletedMembers = executeDelete(connection, "DELETE FROM members WHERE member_id = ?", memberId);
+                executeDelete(connection, "DELETE FROM users WHERE id = ? AND role = 'MEMBER'", userId);
+                connection.commit();
+                return deletedMembers > 0;
+            } catch (SQLException | RuntimeException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(oldAutoCommit);
+            }
         }
-        
-        return userService.deleteUser(member.getUserId());
     }
-    
-    /**
-     * Maps ResultSet to Member object
-     */
-    private member mapResultSetToMember(ResultSet rs) throws SQLException {
+
+    public member findByUserId(int id) throws SQLException {
+        return findOne(baseSelect() + " WHERE m.user_id=?", id);
+    }
+
+    public member findById(int id) throws SQLException {
+        return findOne(baseSelect() + " WHERE m.member_id=?", id);
+    }
+
+    public List<member> findAll() throws SQLException {
+        return findMany(baseSelect() + " ORDER BY m.first_name, m.last_name", 0);
+    }
+
+    public List<member> findRecentMembers(int limit) throws SQLException {
+        return findMany(baseSelect() + " ORDER BY m.created_at DESC LIMIT ?", limit);
+    }
+
+    public int countAll() throws SQLException {
+        return count("SELECT COUNT(*) FROM members");
+    }
+
+    public int countActive() throws SQLException {
+        return count("SELECT COUNT(*) FROM members WHERE membership_expiry_date >= CURRENT_DATE");
+    }
+
+    public int countExpired() throws SQLException {
+        return count("SELECT COUNT(*) FROM members WHERE membership_expiry_date < CURRENT_DATE");
+    }
+
+    public Date calculateExpiry(String type, Date joinDate) {
+        return dateUtil.addMonths(joinDate, switch (type == null ? "" : type.toUpperCase()) {
+            case "FAMILY" -> 6;
+            case "PREMIUM" -> 3;
+            default -> 1;
+        });
+    }
+
+    private int executeDelete(Connection connection, String sql, int id) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate();
+        }
+    }
+
+    private member findOne(String sql, int id) throws SQLException {
+        try (Connection connection = DBConnection.getConnection(); PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapMember(rs) : null;
+            }
+        }
+    }
+
+    private List<member> findMany(String sql, int limit) throws SQLException {
+        List<member> members = new ArrayList<>();
+        try (Connection connection = DBConnection.getConnection(); PreparedStatement ps = connection.prepareStatement(sql)) {
+            if (limit > 0) ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) members.add(mapMember(rs));
+            }
+        }
+        return members;
+    }
+
+    private int count(String sql) throws SQLException {
+        try (Connection connection = DBConnection.getConnection(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(sql)) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
+    private String baseSelect() {
+        return "SELECT m.*, COALESCE(u.email, u.username) AS email, u.status AS user_status FROM members m JOIN users u ON u.id = m.user_id";
+    }
+
+    private void bindMember(PreparedStatement ps, member member) throws SQLException {
+        ps.setInt(1, member.getUserId());
+        ps.setString(2, member.getFirstName());
+        ps.setString(3, member.getLastName());
+        ps.setString(4, member.getPhone());
+        ps.setDate(5, member.getDateOfBirth());
+        ps.setString(6, member.getGender());
+        ps.setString(7, member.getAddress());
+        ps.setString(8, member.getEmergencyContactName());
+        ps.setString(9, member.getEmergencyContactPhone());
+        ps.setString(10, member.getMembershipType());
+        ps.setDate(11, member.getJoinDate());
+        ps.setDate(12, member.getMembershipExpiryDate());
+        ps.setObject(13, member.getHeightCm());
+        ps.setObject(14, member.getWeightKg());
+        ps.setString(15, member.getFitnessGoal());
+        ps.setString(16, member.getMedicalNotes());
+    }
+
+    private member mapMember(ResultSet rs) throws SQLException {
         member member = new member();
         member.setMemberId(rs.getInt("member_id"));
         member.setUserId(rs.getInt("user_id"));
@@ -303,20 +259,18 @@ public class memberService {
         member.setMembershipType(rs.getString("membership_type"));
         member.setJoinDate(rs.getDate("join_date"));
         member.setMembershipExpiryDate(rs.getDate("membership_expiry_date"));
-        member.setHeightCm(rs.getDouble("height_cm"));
-        member.setWeightKg(rs.getDouble("weight_kg"));
+        member.setHeightCm(toDouble(rs.getObject("height_cm")));
+        member.setWeightKg(toDouble(rs.getObject("weight_kg")));
         member.setFitnessGoal(rs.getString("fitness_goal"));
         member.setMedicalNotes(rs.getString("medical_notes"));
         member.setCreatedAt(rs.getTimestamp("created_at"));
         member.setUpdatedAt(rs.getTimestamp("updated_at"));
-        
-        try {
-            member.setEmail(rs.getString("email"));
-            member.setUserStatus(rs.getString("user_status"));
-        } catch (SQLException e) {
-            // These fields might not be in all queries
-        }
-        
+        member.setEmail(rs.getString("email"));
+        member.setUserStatus(rs.getString("user_status"));
         return member;
+    }
+
+    private Double toDouble(Object value) {
+        return value instanceof Number number ? number.doubleValue() : null;
     }
 }

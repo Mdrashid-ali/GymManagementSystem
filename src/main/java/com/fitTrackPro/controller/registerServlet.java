@@ -1,124 +1,64 @@
 package com.fitTrackPro.controller;
 
-
 import com.fitTrackPro.model.member;
 import com.fitTrackPro.service.memberService;
-import com.fitTrackPro.util.validationUtil;
-import jakarta.servlet.ServletException;
+import com.fitTrackPro.util.*;
+import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
+import java.io.*;
+import java.sql.*;
 
-import java.io.IOException;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.time.LocalDate;
-
-/**
- * RegisterServlet - Handles user registration
- */
-@WebServlet("/register")
+@WebServlet({"/register", "/registerServlet"})
 public class registerServlet extends HttpServlet {
-    
-    private memberService memberService;
-    
-    @Override
-    public void init() throws ServletException {
-        memberService = new memberService();
+
+    protected void doGet(HttpServletRequest r, HttpServletResponse p) throws ServletException, IOException {
+        r.getRequestDispatcher("/WEB-INF/pages/register.jsp").forward(r, p);
     }
-    
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        request.getRequestDispatcher("/WEB-INF/pages/register.jsp").forward(request, response);
-    }
-    
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        
-        String firstName = request.getParameter("firstName");
-        String lastName = request.getParameter("lastName");
-        String email = request.getParameter("email");
-        String phone = request.getParameter("phone");
-        String password = request.getParameter("password");
-        String confirmPassword = request.getParameter("confirmPassword");
-        String membershipType = request.getParameter("membershipType");
-        
-        // Validation
-        StringBuilder errors = new StringBuilder();
-        
-        if (!validationUtil.isValidName(firstName)) {
-            errors.append("Invalid first name. ");
-        }
-        if (!validationUtil.isValidName(lastName)) {
-            errors.append("Invalid last name. ");
-        }
-        if (!validationUtil.isValidEmail(email)) {
-            errors.append("Invalid email format. ");
-        }
-        if (!validationUtil.isValidPhone(phone)) {
-            errors.append("Invalid phone number. ");
-        }
-        if (!validationUtil.isValidPassword(password)) {
-            errors.append("Password must be at least 8 characters with uppercase, lowercase, digit, and special character. ");
-        }
-        if (!password.equals(confirmPassword)) {
-            errors.append("Passwords do not match. ");
-        }
-        
-        if (errors.length() > 0) {
-            request.setAttribute("error", errors.toString());
-            request.setAttribute("firstName", firstName);
-            request.setAttribute("lastName", lastName);
-            request.setAttribute("email", email);
-            request.setAttribute("phone", phone);
-            request.setAttribute("membershipType", membershipType);
-            request.getRequestDispatcher("/WEB-INF/pages/register.jsp").forward(request, response);
+
+    protected void doPost(HttpServletRequest r, HttpServletResponse p) throws ServletException, IOException {
+        String fn = r.getParameter("firstName"), ln = r.getParameter("lastName"), email = r.getParameter("email"), phone = r.getParameter("phone"), pass = r.getParameter("password"), cp = r.getParameter("confirmPassword"), type = clean(r.getParameter("membershipType"));
+        keep(r, fn, ln, email, phone);
+
+        String err = validate(fn, ln, email, phone, pass, cp);
+
+        if (err != null) {
+            r.setAttribute("error", err);
+            doGet(r, p);
             return;
         }
-        
+
         try {
-            member member = new member();
-            member.setFirstName(firstName);
-            member.setLastName(lastName);
-            member.setEmail(email);
-            member.setPhone(phone);
-            member.setMembershipType(membershipType);
-            member.setJoinDate(Date.valueOf(LocalDate.now()));
-            
-            // Set expiry date based on membership type
-            int months = getMembershipMonths(membershipType);
-            member.setMembershipExpiryDate(Date.valueOf(LocalDate.now().plusMonths(months)));
-            
-            member registeredMember = memberService.registerMember(member, password);
-            
-            if (registeredMember != null) {
-                request.setAttribute("success", "Registration successful! Please login.");
-                response.sendRedirect("login.jsp");
-            } else {
-                request.setAttribute("error", "Registration failed. Please try again.");
-                request.getRequestDispatcher("/WEB-INF/pages/register.jsp").forward(request, response);
-            }
-            
-        } catch (IllegalArgumentException e) {
-            request.setAttribute("error", e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/pages/register.jsp").forward(request, response);
+            memberService ms = new memberService();
+            Date join = dateUtil.today();
+            member m = new member(fn.trim(), ln.trim(), phone.trim(), 0, type, join, ms.calculateExpiry(type, join));
+
+            ms.registerMemberAccount(email.trim(), pass, m);
+            p.sendRedirect(r.getContextPath() + "/login?success=Registration successful. Please sign in.");
         } catch (SQLException e) {
-            e.printStackTrace();
-            request.setAttribute("error", "System error. Please try again later.");
-            request.getRequestDispatcher("/WEB-INF/pages/register.jsp").forward(request, response);
+            log("Registration failed", e);
+            r.setAttribute("error", "23000".equals(e.getSQLState()) ? "An account already exists for that email." : "Unable to create account: " + e.getMessage());
+            doGet(r, p);
         }
     }
-    
-    private int getMembershipMonths(String type) {
-        switch (type) {
-            case "BASIC": return 1;
-            case "PREMIUM": return 3;
-            case "FAMILY": return 6;
-            case "STUDENT": return 1;
-            default: return 1;
-        }
+
+    private String clean(String v) {
+        return validationUtil.isBlank(v) ? "BASIC" : v.trim().toUpperCase();
+    }
+
+    private String validate(String fn, String ln, String e, String ph, String pw, String cp) {
+        if (validationUtil.isBlank(fn) || validationUtil.isBlank(ln)) return "First name and last name are required.";
+        if (!validationUtil.isValidEmail(e)) return "Enter a valid email address.";
+        if (!validationUtil.isValidPhone(ph)) return "Enter a valid phone number.";
+        if (!validationUtil.isStrongPassword(pw)) return "Password must be at least 8 characters and include uppercase, lowercase, digit, and special character.";
+        if (!pw.equals(cp)) return "Password and confirmation do not match.";
+        return null;
+    }
+
+    private void keep(HttpServletRequest r, String fn, String ln, String e, String ph) {
+        r.setAttribute("firstName", fn);
+        r.setAttribute("lastName", ln);
+        r.setAttribute("email", e);
+        r.setAttribute("phone", ph);
     }
 }

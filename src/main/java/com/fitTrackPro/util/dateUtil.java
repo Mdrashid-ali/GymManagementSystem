@@ -1,56 +1,31 @@
 package com.fitTrackPro.util;
 
-
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 
-/**
- * Date Utility Class
- * Provides date formatting methods
- */
-public class dateUtil {
-    
-    private static final String DISPLAY_DATE_FORMAT = "dd/MM/yyyy";
-    private static final String DISPLAY_DATE_TIME_FORMAT = "dd/MM/yyyy HH:mm";
-    
-    /**
-     * Formats a Date for display
-     */
+public final class dateUtil {
+
+    private dateUtil() {}
+
     public static String formatDisplayDate(Date date) {
-        if (date == null) {
-            return "";
-        }
-        SimpleDateFormat sdf = new SimpleDateFormat(DISPLAY_DATE_FORMAT);
-        return sdf.format(date);
+        return date == null ? "" : new SimpleDateFormat("MMM dd, yyyy").format(date);
     }
-    
-    /**
-     * Formats a Timestamp for display
-     */
+
     public static String formatDisplayDateTime(Timestamp timestamp) {
-        if (timestamp == null) {
-            return "";
-        }
-        SimpleDateFormat sdf = new SimpleDateFormat(DISPLAY_DATE_TIME_FORMAT);
-        return sdf.format(timestamp);
+        return timestamp == null ? "" : new SimpleDateFormat("MMM dd, yyyy hh:mm a").format(timestamp);
     }
-    
-    /**
-     * Gets current date
-     */
-    public static Date getCurrentDate() {
-        return new Date(System.currentTimeMillis());
+
+    public static Date parseSqlDate(String value) {
+        return value == null || value.isBlank() ? null : Date.valueOf(value);
     }
-    
-    /**
-     * Checks if a date is expired
-     */
-    public static boolean isExpired(Date expiryDate) {
-        if (expiryDate == null) {
-            return true;
-        }
-        Date today = getCurrentDate();
-        return expiryDate.before(today);
+
+    public static Date today() {
+        return Date.valueOf(LocalDate.now());
+    }
+
+    public static Date addMonths(Date date, int months) {
+        return Date.valueOf((date == null ? LocalDate.now() : date.toLocalDate()).plusMonths(months));
     }
 }

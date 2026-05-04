@@ -3,34 +3,16 @@ package com.fitTrackPro.model;
 import java.sql.Date;
 import java.sql.Timestamp;
 
-/**
- * WorkoutPlan Model Class
- * Represents workout plans assigned to members by trainers
- */
 public class workoutPlan {
-    private int planId;
-    private int trainerId;
-    private int memberId;
-    private String planName;
-    private String description;
-    private Date startDate;
-    private Date endDate;
-    private String status;
-    private String exercises;
-    private String notes;
-    private Timestamp createdAt;
-    private Timestamp updatedAt;
-    
-    // Additional fields for display
-    private String trainerName;
-    private String memberName;
-    
-    // Constructors
-    public workoutPlan() {
-    }
-    
-    public workoutPlan(int trainerId, int memberId, String planName, 
-                       Date startDate, Date endDate) {
+
+    private int planId, trainerId, memberId;
+    private String planName, description, status, exercises, notes, trainerName, memberName;
+    private Date startDate, endDate;
+    private Timestamp createdAt, updatedAt;
+
+    public workoutPlan() {}
+
+    public workoutPlan(int trainerId, int memberId, String planName, Date startDate, Date endDate) {
         this.trainerId = trainerId;
         this.memberId = memberId;
         this.planName = planName;
@@ -38,145 +20,124 @@ public class workoutPlan {
         this.endDate = endDate;
         this.status = "ACTIVE";
     }
-    
-    // Getters and Setters
+
     public int getPlanId() {
         return planId;
     }
-    
-    public void setPlanId(int planId) {
-        this.planId = planId;
+
+    public void setPlanId(int v) {
+        planId = v;
     }
-    
+
     public int getTrainerId() {
         return trainerId;
     }
-    
-    public void setTrainerId(int trainerId) {
-        this.trainerId = trainerId;
+
+    public void setTrainerId(int v) {
+        trainerId = v;
     }
-    
+
     public int getMemberId() {
         return memberId;
     }
-    
-    public void setMemberId(int memberId) {
-        this.memberId = memberId;
+
+    public void setMemberId(int v) {
+        memberId = v;
     }
-    
+
     public String getPlanName() {
         return planName;
     }
-    
-    public void setPlanName(String planName) {
-        this.planName = planName;
+
+    public void setPlanName(String v) {
+        planName = v;
     }
-    
+
     public String getDescription() {
         return description;
     }
-    
-    public void setDescription(String description) {
-        this.description = description;
+
+    public void setDescription(String v) {
+        description = v;
     }
-    
+
     public Date getStartDate() {
         return startDate;
     }
-    
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+
+    public void setStartDate(Date v) {
+        startDate = v;
     }
-    
+
     public Date getEndDate() {
         return endDate;
     }
-    
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+
+    public void setEndDate(Date v) {
+        endDate = v;
     }
-    
+
     public String getStatus() {
         return status;
     }
-    
-    public void setStatus(String status) {
-        this.status = status;
+
+    public void setStatus(String v) {
+        status = v;
     }
-    
+
     public String getExercises() {
         return exercises;
     }
-    
-    public void setExercises(String exercises) {
-        this.exercises = exercises;
+
+    public void setExercises(String v) {
+        exercises = v;
     }
-    
+
     public String getNotes() {
         return notes;
     }
-    
-    public void setNotes(String notes) {
-        this.notes = notes;
+
+    public void setNotes(String v) {
+        notes = v;
     }
-    
+
     public Timestamp getCreatedAt() {
         return createdAt;
     }
-    
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
+
+    public void setCreatedAt(Timestamp v) {
+        createdAt = v;
     }
-    
+
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
-    
-    public void setUpdatedAt(Timestamp updatedAt) {
-        this.updatedAt = updatedAt;
+
+    public void setUpdatedAt(Timestamp v) {
+        updatedAt = v;
     }
-    
+
     public String getTrainerName() {
         return trainerName;
     }
-    
-    public void setTrainerName(String trainerName) {
-        this.trainerName = trainerName;
+
+    public void setTrainerName(String v) {
+        trainerName = v;
     }
-    
+
     public String getMemberName() {
         return memberName;
     }
-    
-    public void setMemberName(String memberName) {
-        this.memberName = memberName;
+
+    public void setMemberName(String v) {
+        memberName = v;
     }
-    
-    // Utility methods
+
     public boolean isActive() {
-        return "ACTIVE".equals(status);
+        return "ACTIVE".equalsIgnoreCase(status);
     }
-    
+
     public boolean isCompleted() {
-        return "COMPLETED".equals(status);
-    }
-    
-    public boolean isExpired() {
-        if (endDate == null) {
-            return false;
-        }
-        Date today = new Date(System.currentTimeMillis());
-        return endDate.before(today);
-    }
-    
-    @Override
-    public String toString() {
-        return "WorkoutPlan{" +
-                "planId=" + planId +
-                ", planName='" + planName + '\'' +
-                ", memberName='" + memberName + '\'' +
-                ", trainerName='" + trainerName + '\'' +
-                ", status='" + status + '\'' +
-                '}';
+        return "COMPLETED".equalsIgnoreCase(status);
     }
 }

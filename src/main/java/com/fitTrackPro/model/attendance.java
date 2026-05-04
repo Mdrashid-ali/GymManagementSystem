@@ -2,119 +2,79 @@ package com.fitTrackPro.model;
 
 import java.sql.Timestamp;
 
-/**
- * Attendance Model Class
- * Tracks member gym check-ins and check-outs
- */
 public class attendance {
-    private int attendanceId;
-    private int memberId;
-    private Timestamp checkInTime;
-    private Timestamp checkOutTime;
-    private String checkInMethod;
-    private Timestamp createdAt;
-    
-    // Additional fields for display
-    private String memberName;
-    
-    // Constructors
-    public attendance() {
-    }
-    
-    public attendance(int memberId, String checkInMethod) {
-        this.memberId = memberId;
-        this.checkInMethod = checkInMethod;
-        this.checkInTime = new Timestamp(System.currentTimeMillis());
-    }
-    
-    // Getters and Setters
+
+    private int attendanceId, memberId;
+    private Timestamp checkInTime, checkOutTime, createdAt;
+    private String checkInMethod, memberName;
+
     public int getAttendanceId() {
         return attendanceId;
     }
-    
-    public void setAttendanceId(int attendanceId) {
-        this.attendanceId = attendanceId;
+
+    public void setAttendanceId(int v) {
+        attendanceId = v;
     }
-    
+
     public int getMemberId() {
         return memberId;
     }
-    
-    public void setMemberId(int memberId) {
-        this.memberId = memberId;
+
+    public void setMemberId(int v) {
+        memberId = v;
     }
-    
+
     public Timestamp getCheckInTime() {
         return checkInTime;
     }
-    
-    public void setCheckInTime(Timestamp checkInTime) {
-        this.checkInTime = checkInTime;
+
+    public void setCheckInTime(Timestamp v) {
+        checkInTime = v;
     }
-    
+
     public Timestamp getCheckOutTime() {
         return checkOutTime;
     }
-    
-    public void setCheckOutTime(Timestamp checkOutTime) {
-        this.checkOutTime = checkOutTime;
+
+    public void setCheckOutTime(Timestamp v) {
+        checkOutTime = v;
     }
-    
+
     public String getCheckInMethod() {
         return checkInMethod;
     }
-    
-    public void setCheckInMethod(String checkInMethod) {
-        this.checkInMethod = checkInMethod;
+
+    public void setCheckInMethod(String v) {
+        checkInMethod = v;
     }
-    
+
     public Timestamp getCreatedAt() {
         return createdAt;
     }
-    
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
+
+    public void setCreatedAt(Timestamp v) {
+        createdAt = v;
     }
-    
+
     public String getMemberName() {
         return memberName;
     }
-    
-    public void setMemberName(String memberName) {
-        this.memberName = memberName;
+
+    public void setMemberName(String v) {
+        memberName = v;
     }
-    
-    // Utility methods
+
     public boolean isCheckedOut() {
         return checkOutTime != null;
     }
-    
+
     public long getDurationMinutes() {
-        if (checkOutTime == null) {
-            Timestamp now = new Timestamp(System.currentTimeMillis());
-            return (now.getTime() - checkInTime.getTime()) / (1000 * 60);
-        }
-        return (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60);
+        Timestamp end = checkOutTime == null ? new Timestamp(System.currentTimeMillis()) : checkOutTime;
+        return checkInTime == null ? 0 : (end.getTime() - checkInTime.getTime()) / 60000;
     }
-    
+
     public String getFormattedDuration() {
-        long minutes = getDurationMinutes();
-        long hours = minutes / 60;
-        long mins = minutes % 60;
-        
-        if (hours > 0) {
-            return hours + "h " + mins + "m";
-        }
-        return mins + " minutes";
-    }
-    
-    @Override
-    public String toString() {
-        return "Attendance{" +
-                "attendanceId=" + attendanceId +
-                ", memberName='" + memberName + '\'' +
-                ", checkInTime=" + checkInTime +
-                ", isCheckedOut=" + isCheckedOut() +
-                '}';
+        long m = getDurationMinutes();
+        return m / 60 > 0 ? (m / 60) + "h " + (m % 60) + "m" : m + " minutes";
     }
 }

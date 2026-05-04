@@ -1,0 +1,76 @@
+CREATE DATABASE IF NOT EXISTS fittrackpro;
+USE fittrackpro;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NULL,
+    role VARCHAR(20) NULL DEFAULT 'MEMBER',
+    status VARCHAR(20) NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS members (
+    member_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(30) NOT NULL,
+    date_of_birth DATE NULL,
+    gender VARCHAR(20) NULL,
+    address VARCHAR(500) NULL,
+    emergency_contact_name VARCHAR(150) NULL,
+    emergency_contact_phone VARCHAR(30) NULL,
+    membership_type VARCHAR(30) NOT NULL DEFAULT 'BASIC',
+    join_date DATE NOT NULL,
+    membership_expiry_date DATE NOT NULL,
+    height_cm DECIMAL(5,2) NULL,
+    weight_kg DECIMAL(5,2) NULL,
+    fitness_goal VARCHAR(500) NULL,
+    medical_notes VARCHAR(1000) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS trainers (
+    trainer_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(30) NULL,
+    specialization VARCHAR(150) NULL,
+    experience_years INT NOT NULL DEFAULT 0,
+    certification VARCHAR(255) NULL,
+    bio VARCHAR(1000) NULL,
+    availability_schedule VARCHAR(1000) NULL,
+    hire_date DATE NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS workout_plans (
+    plan_id INT AUTO_INCREMENT PRIMARY KEY,
+    trainer_id INT NOT NULL,
+    member_id INT NOT NULL,
+    plan_name VARCHAR(150) NOT NULL,
+    description VARCHAR(1000) NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    exercises TEXT NULL,
+    notes VARCHAR(1000) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS attendance (
+    attendance_id INT AUTO_INCREMENT PRIMARY KEY,
+    member_id INT NOT NULL,
+    check_in_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    check_out_time TIMESTAMP NULL,
+    check_in_method VARCHAR(30) NOT NULL DEFAULT 'WEB',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

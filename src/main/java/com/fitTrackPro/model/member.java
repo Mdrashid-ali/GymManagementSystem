@@ -3,41 +3,17 @@ package com.fitTrackPro.model;
 import java.sql.Date;
 import java.sql.Timestamp;
 
-/**
- * Member Model Class
- * Extends user information with member-specific details
- */
 public class member {
-    private int memberId;
-    private int userId;
-    private String firstName;
-    private String lastName;
-    private String phone;
-    private Date dateOfBirth;
-    private String gender;
-    private String address;
-    private String emergencyContactName;
-    private String emergencyContactPhone;
-    private String membershipType;
-    private Date joinDate;
-    private Date membershipExpiryDate;
-    private Double heightCm;
-    private Double weightKg;
-    private String fitnessGoal;
-    private String medicalNotes;
-    private Timestamp createdAt;
-    private Timestamp updatedAt;
-    
-    // Additional fields for display
-    private String email;
-    private String userStatus;
-    
-    // Constructors
-    public member() {
-    }
-    
-    public member(String firstName, String lastName, String phone, int userId, 
-                  String membershipType, Date joinDate, Date membershipExpiryDate) {
+
+    private int memberId, userId;
+    private String firstName, lastName, phone, gender, address, emergencyContactName, emergencyContactPhone, membershipType, fitnessGoal, medicalNotes, email, userStatus;
+    private Date dateOfBirth, joinDate, membershipExpiryDate;
+    private Double heightCm, weightKg;
+    private Timestamp createdAt, updatedAt;
+
+    public member() {}
+
+    public member(String firstName, String lastName, String phone, int userId, String membershipType, Date joinDate, Date membershipExpiryDate) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.phone = phone;
@@ -46,205 +22,180 @@ public class member {
         this.joinDate = joinDate;
         this.membershipExpiryDate = membershipExpiryDate;
     }
-    
-    // Getters and Setters
+
     public int getMemberId() {
         return memberId;
     }
-    
-    public void setMemberId(int memberId) {
-        this.memberId = memberId;
+
+    public void setMemberId(int v) {
+        memberId = v;
     }
-    
+
     public int getUserId() {
         return userId;
     }
-    
-    public void setUserId(int userId) {
-        this.userId = userId;
+
+    public void setUserId(int v) {
+        userId = v;
     }
-    
+
     public String getFirstName() {
         return firstName;
     }
-    
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+
+    public void setFirstName(String v) {
+        firstName = v;
     }
-    
+
     public String getLastName() {
         return lastName;
     }
-    
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+
+    public void setLastName(String v) {
+        lastName = v;
     }
-    
+
     public String getFullName() {
-        return firstName + " " + lastName;
+        return (firstName == null ? "" : firstName) + " " + (lastName == null ? "" : lastName);
     }
-    
+
     public String getPhone() {
         return phone;
     }
-    
-    public void setPhone(String phone) {
-        this.phone = phone;
+
+    public void setPhone(String v) {
+        phone = v;
     }
-    
+
     public Date getDateOfBirth() {
         return dateOfBirth;
     }
-    
-    public void setDateOfBirth(Date dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
+
+    public void setDateOfBirth(Date v) {
+        dateOfBirth = v;
     }
-    
+
     public String getGender() {
         return gender;
     }
-    
-    public void setGender(String gender) {
-        this.gender = gender;
+
+    public void setGender(String v) {
+        gender = v;
     }
-    
+
     public String getAddress() {
         return address;
     }
-    
-    public void setAddress(String address) {
-        this.address = address;
+
+    public void setAddress(String v) {
+        address = v;
     }
-    
+
     public String getEmergencyContactName() {
         return emergencyContactName;
     }
-    
-    public void setEmergencyContactName(String emergencyContactName) {
-        this.emergencyContactName = emergencyContactName;
+
+    public void setEmergencyContactName(String v) {
+        emergencyContactName = v;
     }
-    
+
     public String getEmergencyContactPhone() {
         return emergencyContactPhone;
     }
-    
-    public void setEmergencyContactPhone(String emergencyContactPhone) {
-        this.emergencyContactPhone = emergencyContactPhone;
+
+    public void setEmergencyContactPhone(String v) {
+        emergencyContactPhone = v;
     }
-    
+
     public String getMembershipType() {
         return membershipType;
     }
-    
-    public void setMembershipType(String membershipType) {
-        this.membershipType = membershipType;
+
+    public void setMembershipType(String v) {
+        membershipType = v;
     }
-    
+
     public Date getJoinDate() {
         return joinDate;
     }
-    
-    public void setJoinDate(Date joinDate) {
-        this.joinDate = joinDate;
+
+    public void setJoinDate(Date v) {
+        joinDate = v;
     }
-    
+
     public Date getMembershipExpiryDate() {
         return membershipExpiryDate;
     }
-    
-    public void setMembershipExpiryDate(Date membershipExpiryDate) {
-        this.membershipExpiryDate = membershipExpiryDate;
+
+    public void setMembershipExpiryDate(Date v) {
+        membershipExpiryDate = v;
     }
-    
+
     public Double getHeightCm() {
         return heightCm;
     }
-    
-    public void setHeightCm(Double heightCm) {
-        this.heightCm = heightCm;
+
+    public void setHeightCm(Double v) {
+        heightCm = v;
     }
-    
+
     public Double getWeightKg() {
         return weightKg;
     }
-    
-    public void setWeightKg(Double weightKg) {
-        this.weightKg = weightKg;
+
+    public void setWeightKg(Double v) {
+        weightKg = v;
     }
-    
+
     public String getFitnessGoal() {
         return fitnessGoal;
     }
-    
-    public void setFitnessGoal(String fitnessGoal) {
-        this.fitnessGoal = fitnessGoal;
+
+    public void setFitnessGoal(String v) {
+        fitnessGoal = v;
     }
-    
+
     public String getMedicalNotes() {
         return medicalNotes;
     }
-    
-    public void setMedicalNotes(String medicalNotes) {
-        this.medicalNotes = medicalNotes;
+
+    public void setMedicalNotes(String v) {
+        medicalNotes = v;
     }
-    
+
     public Timestamp getCreatedAt() {
         return createdAt;
     }
-    
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
+
+    public void setCreatedAt(Timestamp v) {
+        createdAt = v;
     }
-    
+
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
-    
-    public void setUpdatedAt(Timestamp updatedAt) {
-        this.updatedAt = updatedAt;
+
+    public void setUpdatedAt(Timestamp v) {
+        updatedAt = v;
     }
-    
+
     public String getEmail() {
         return email;
     }
-    
-    public void setEmail(String email) {
-        this.email = email;
+
+    public void setEmail(String v) {
+        email = v;
     }
-    
+
     public String getUserStatus() {
         return userStatus;
     }
-    
-    public void setUserStatus(String userStatus) {
-        this.userStatus = userStatus;
+
+    public void setUserStatus(String v) {
+        userStatus = v;
     }
-    
-    // Utility methods
+
     public boolean isMembershipActive() {
-        if (membershipExpiryDate == null) {
-            return false;
-        }
-        Date today = new Date(System.currentTimeMillis());
-        return !membershipExpiryDate.before(today);
-    }
-    
-    public Double calculateBMI() {
-        if (heightCm == null || weightKg == null || heightCm == 0) {
-            return null;
-        }
-        double heightInMeters = heightCm / 100.0;
-        return weightKg / (heightInMeters * heightInMeters);
-    }
-    
-    @Override
-    public String toString() {
-        return "Member{" +
-                "memberId=" + memberId +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", email='" + email + '\'' +
-                ", membershipType='" + membershipType + '\'' +
-                '}';
+        return membershipExpiryDate != null && !membershipExpiryDate.before(new Date(System.currentTimeMillis()));
     }
 }
