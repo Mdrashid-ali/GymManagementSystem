@@ -1,0 +1,1 @@
+public class InitDb { public static void main(String[] args) throws Exception { try (java.sql.Connection c = com.fitTrackPro.config.DBConnection.getConnection()) { System.out.println("Database initialized: " + !c.isClosed()); } } }

@@ -1,0 +1,64 @@
+package com.fitTrackPro.controller;
+
+import com.fitTrackPro.model.member;
+import com.fitTrackPro.service.memberService;
+import com.fitTrackPro.util.*;
+import jakarta.servlet.*;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+import java.io.*;
+import java.sql.*;
+
+@WebServlet({"/register", "/registerServlet"})
+public class registerServlet extends HttpServlet {
+
+    protected void doGet(HttpServletRequest r, HttpServletResponse p) throws ServletException, IOException {
+        r.getRequestDispatcher("/WEB-INF/pages/register.jsp").forward(r, p);
+    }
+
+    protected void doPost(HttpServletRequest r, HttpServletResponse p) throws ServletException, IOException {
+        String fn = r.getParameter("firstName"), ln = r.getParameter("lastName"), email = r.getParameter("email"), phone = r.getParameter("phone"), pass = r.getParameter("password"), cp = r.getParameter("confirmPassword"), type = clean(r.getParameter("membershipType"));
+        keep(r, fn, ln, email, phone);
+
+        String err = validate(fn, ln, email, phone, pass, cp);
+
+        if (err != null) {
+            r.setAttribute("error", err);
+            doGet(r, p);
+            return;
+        }
+
+        try {
+            memberService ms = new memberService();
+            Date join = dateUtil.today();
+            member m = new member(fn.trim(), ln.trim(), phone.trim(), 0, type, join, ms.calculateExpiry(type, join));
+
+            ms.registerMemberAccount(email.trim(), pass, m);
+            p.sendRedirect(r.getContextPath() + "/login?success=Registration successful. Please sign in.");
+        } catch (SQLException e) {
+            log("Registration failed", e);
+            r.setAttribute("error", "23000".equals(e.getSQLState()) ? "An account already exists for that email." : "Unable to create account: " + e.getMessage());
+            doGet(r, p);
+        }
+    }
+
+    private String clean(String v) {
+        return validationUtil.isBlank(v) ? "BASIC" : v.trim().toUpperCase();
+    }
+
+    private String validate(String fn, String ln, String e, String ph, String pw, String cp) {
+        if (validationUtil.isBlank(fn) || validationUtil.isBlank(ln)) return "First name and last name are required.";
+        if (!validationUtil.isValidEmail(e)) return "Enter a valid email address.";
+        if (!validationUtil.isValidPhone(ph)) return "Enter a valid phone number.";
+        if (!validationUtil.isStrongPassword(pw)) return "Password must be at least 8 characters and include uppercase, lowercase, digit, and special character.";
+        if (!pw.equals(cp)) return "Password and confirmation do not match.";
+        return null;
+    }
+
+    private void keep(HttpServletRequest r, String fn, String ln, String e, String ph) {
+        r.setAttribute("firstName", fn);
+        r.setAttribute("lastName", ln);
+        r.setAttribute("email", e);
+        r.setAttribute("phone", ph);
+    }
+}

@@ -1,11 +1,11 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password - FitTrack Pro</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=forgot-fix-20">
 </head>
 <body>
     <div class="auth-container">
@@ -21,8 +21,11 @@
 
             <% if (request.getAttribute("resetLink") != null) { %>
                 <div class="alert alert-success">
-                    Reset link generated. Use this link within 30 minutes:<br>
-                    <a href="<%= request.getAttribute("resetLink") %>"><%= request.getAttribute("resetLink") %></a>
+                    Reset link generated. Use it within 30 minutes.
+                    <div style="margin-top: 12px;">
+                        <a class="btn btn-primary btn-sm" href="<%= request.getAttribute("resetLink") %>">Open Reset Page</a>
+                    </div>
+                    <small style="display:block; margin-top: 10px; word-break: break-all;"><%= request.getAttribute("resetLink") %></small>
                 </div>
             <% } %>
 
